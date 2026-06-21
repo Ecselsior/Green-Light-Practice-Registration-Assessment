@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPhC Pharmacy Revision Tool</title>
+    <!-- OpenDyslexic Font CDN -->
+    <link href="https://fonts.cdnfonts.com/css/open-dyslexic" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #FAF6F0;
+            --text-color: #2D2D2D;
+            --accent-color: #004d40;
+            --card-bg: #FFFFFF;
+            --highlight-bg: #FFF9C4;
+            --border-width: 3px;
+        }
+
+        body {
+            font-family: 'Open-Dyslexic', 'Comic Sans MS', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            letter-spacing: 0.05em;
+            padding: 20px;
+            font-size: 18px;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+            border-bottom: var(--border-width) solid var(--accent-color);
+            padding-bottom: 10px;
+        }
+
+        .toggle-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .toggle-btn {
+            font-family: inherit;
+            font-size: 20px;
+            padding: 15px 25px;
+            cursor: pointer;
+            background-color: var(--card-bg);
+            border: var(--border-width) solid var(--accent-color);
+            border-radius: 12px;
+            transition: 0.3s;
+        }
+
+        .toggle-btn.active {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: var(--border-width) solid var(--accent-color);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 6px 6px 0px var(--accent-color);
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .question-text {
+            font-weight: bold;
+            margin-bottom: 25px;
+            font-size: 1.2em;
+        }
+
+        .metric-box {
+            display: inline-block;
+            border: 2px solid var(--text-color);
+            padding: 2px 8px;
+            margin: 2px;
+            font-weight: bold;
+            background-color: var(--highlight-bg);
+        }
+
+        .answer-container {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f1f8e9;
+            border-radius: 10px;
+            display: none;
+            border-left: 5px solid var(--accent-color);
+        }
+
+        .btn-group {
+            margin-top: 30px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .action-btn {
+            font-family: inherit;
+            font-size: 20px;
+            padding: 15px 30px;
+            cursor: pointer;
+            flex: 1;
+            background-color: var(--card-bg);
+            border: var(--border-width) solid var(--text-color);
+            border-radius: 12px;
+            font-weight: bold;
+        }
+
+        .action-btn:hover {
+            background-color: #eeeeee;
+        }
+
+        .reveal-btn {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .step {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Pharmacy Revision Tool</h1>
+
+    <div class="toggle-container">
+        <button class="toggle-btn active" id="clinicalToggle" onclick="setDeck('clinical')">Clinical</button>
+        <button class="toggle-btn" id="calcToggle" onclick="setDeck('calculation')">Calculations</button>
+    </div>
+
+    <div id="quiz-area">
+        <div class="card">
+            <div id="question" class="question-text">Loading question...</div>
+            
+            <div id="answer" class="answer-container">
+                <div id="answer-text"></div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="action-btn reveal-btn" onclick="reveal()">Reveal Answer</button>
+            <button class="action-btn" onclick="nextQuestion()">Next Question</button>
+        </div>
+    </div>
+
+    <script>
+        const clinicalQuestions = [
+            {
+                q: "A patient reports an allergy to <span class='metric-box'>COBALT</span>. Which of the following medicines should be used with caution?",
+                a: "<strong>Cyanocobalamin</strong>. [1] Rationale: Cyanocobalamin (Vitamin B12) contains cobalt and should be avoided or used with extreme caution in patients with a confirmed cobalt allergy. [2]"
+            },
+            {
+                q: "Why would a clinician switch a patient from Haloperidol tablets to a <span class='metric-box'>DEPOT</span> injection?",
+                a: "<strong>To improve adherence</strong>. [3] Rationale: Long-acting depot injections are used when it is a clinical priority to avoid non-adherence in the treatment of psychosis or schizophrenia. [3]"
+            },
+            {
+                q: "A patient taking Clozapine for schizophrenia should seek <strong>immediate</strong> medical advice if they experience which symptom?",
+                a: "<strong>Constipation</strong>. [4] Rationale: Clozapine is associated with a potentially fatal risk of intestinal obstruction, faecal impaction, and paralytic ileus if constipation is not managed. [4]"
+            },
+            {
+                q: "Which medication should be <strong>omitted</strong> during periods of diarrhoea and vomiting according to 'sick day rules'?",
+                a: "<strong>Indapamide</strong>. [5] Rationale: Diuretics like Indapamide increase the risk of dehydration and Acute Kidney Injury (AKI) during gastrointestinal illness. [5]"
+            },
+            {
+                q: "A mother presents with her son who has a <strong>non-blanching rash</strong>, stiff neck, and high fever. What is the priority?",
+                a: "<strong>Refer to A&E immediately</strong>. [6] Rationale: These are 'red flag' symptoms for Meningitis, which is a medical emergency. [6]"
+            },
+            {
+                q: "Which antibiotic requires monitoring for new or worsening <strong>respiratory symptoms</strong>?",
+                a: "<strong>Nitrofurantoin</strong>. [7] Rationale: Nitrofurantoin carries a risk of pulmonary adverse effects (MHRA alert 2023). [7]"
+            },
+            {
+                q: "What is the <strong>first-line</strong> antihypertensive for a 48-year-old patient of Black African or African-Caribbean family origin?",
+                a: "<strong>Calcium Channel Blocker</strong> (e.g., Amlodipine). [8, 9] Rationale: NICE guidelines recommend CCBs as first-line for this demographic without Type 2 Diabetes. [9]"
+            },
+            {
+                q: "A patient taking <span class='metric-box'>Simvastatin</span> is prescribed <span class='metric-box'>Clarithromycin</span>. What is the appropriate advice?",
+                a: "<strong>Stop Simvastatin temporarily</strong>. [10] Rationale: Clarithromycin is a potent CYP3A4 inhibitor that increases simvastatin levels, significantly raising the risk of rhabdomyolysis. [10, 11]"
+            },
+            {
+                q: "Which route of administration is <strong>strictly prohibited</strong> for Vincristine?",
+                a: "<strong>Intrathecal</strong>. [12, 13] Rationale: Vincristine must only be given intravenously. Intrathecal administration is usually fatal. [13]"
+            },
+            {
+                q: "Which medicine must <strong>always</strong> be dispensed in the manufacturer’s original full pack to ensure the patient receives safety materials?",
+                a: "<strong>Sodium Valproate</strong>. [14] Rationale: Due to the high risks of teratogenicity, MHRA requires original pack dispensing to ensure patients receive the internal warning cards and leaflets. [14, 15]"
+            }
+        ];
+
+        const calculationQuestions = [
+            {
+                q: "A type 1 diabetic patient weighs <span class='metric-box'>80 kg</span>. Their daily dose is <span class='metric-box'>0.8 units/kg</span>. How many 3mL pre-filled pens (<span class='metric-box'>100 units/ml</span>) are needed for a 30-day supply?",
+                a: "<span class='step'>Step 1: Daily Dose</span> 80kg x 0.8 units = 64 units/day.<br><span class='step'>Step 2: Total Units</span> 64 units x 30 days = 1920 units.<br><span class='step'>Step 3: Pens Needed</span> Each pen has 300 units (3ml x 100u/ml). 1920 / 300 = 6.4 pens. <strong>Round up to 7 pens</strong>. [16]"
+            },
+            {
+                q: "Prepare an ointment by combining <span class='metric-box'>7.5 g</span> of coal tar powder with <span class='metric-box'>100 g</span> of coal tar 2.5% cream. What is the final <span class='metric-box'>% w/w</span>?",
+                a: "<span class='step'>Step 1: Tar in cream</span> 2.5% of 100g = 2.5g.<br><span class='step'>Step 2: Total Tar</span> 2.5g + 7.5g = 10g.<br><span class='step'>Step 3: Total Weight</span> 100g + 7.5g = 107.5g.<br><span class='step'>Step 4: Final %</span> (10 / 107.5) x 100 = <strong>9.3%</strong>. [17, 18]"
+            },
+            {
+                q: "A patient requires <span class='metric-box'>0.2% w/w</span> calamine ointment. You have <span class='metric-box'>500 g</span> of <span class='metric-box'>2% w/w</span> calamine ointment. How much emulsifying ointment (diluent) must be added?",
+                a: "<span class='step'>Step 1: Total Volume Needed</span> (C1 x V1) / C2 = (2% x 500g) / 0.2% = 5000g total.<br><span class='step'>Step 2: Amount to Add</span> 5000g - 500g = <strong>4500 g</strong>. [19]"
+            },
+            {
+                q: "A child weighing <span class='metric-box'>23 kg</span> is prescribed clobazam <span class='metric-box'>250 mcg/kg</span> twice daily. How many mL of <span class='metric-box'>10mg/5mL</span> suspension is needed for 3 weeks?",
+                a: "<span class='step'>Step 1: Dose in mcg</span> 23kg x 250mcg = 5750mcg (5.75mg) per dose.<br><span class='step'>Step 2: Dose in mL</span> (5.75mg / 10mg) x 5mL = 2.875mL (Round to 3mL per dose).<br><span class='step'>Step 3: Total supply</span> 3mL x 2 (BD) x 21 days = <strong>126 mL</strong>. [20] (Note: source mentions 63mL for different duration or rounding; always check specific instructions)."
+            },
+            {
+                q: "Dopamine infusion rate for <span class='metric-box'>83 kg</span> man at <span class='metric-box'>5 mcg/kg/min</span>. Stock is <span class='metric-box'>200 mg in 50 mL</span>. Calculate <span class='metric-box'>mL/hour</span>.",
+                a: "<span class='step'>Step 1: mcg/min</span> 5 x 83 = 415 mcg/min.<br><span class='step'>Step 2: mg/hour</span> (415 x 60) / 1000 = 24.9 mg/hr.<br><span class='step'>Step 3: mL/hour</span> (24.9mg / 200mg) x 50mL = <strong>6.2 mL/hr</strong>. [21]"
+            },
+            {
+                q: "What is the potency of <span class='metric-box'>Codeine</span> compared to <span class='metric-box'>Morphine</span> based on standard palliative conversion?",
+                a: "<strong>0.1</strong>. [22] Rationale: 100mg of Codeine is roughly equivalent to 10mg of Morphine (10/100 = 0.1). [22]"
+            },
+            {
+                q: "How many 10mL vials of <span class='metric-box'>calcium gluconate</span> (2.2 mmol per 10 mL) are needed to provide <span class='metric-box'>10 mmol</span>? (Whole vials only).",
+                a: "<span class='step'>Step 1: Calculate Vials</span> 10 mmol / 2.2 mmol = 4.54 vials.<br><span class='step'>Step 2: Policy</span> Only whole vials permitted. <strong>Answer: 5 vials</strong>. [23, 24]"
+            },
+            {
+                q: "A child requires <span class='metric-box'>500 mcg</span> of Furosemide. You dilute <span class='metric-box'>5 mL</span> of <span class='metric-box'>4 mg/mL</span> solution to <span class='metric-box'>20 mL</span>. What volume of the <strong>diluted</strong> liquid is given?",
+                a: "<span class='step'>Step 1: Concentration</span> 20mg in 20ml = 1mg/ml.<br><span class='step'>Step 2: Volume</span> 500mcg = 0.5mg. Since it is 1mg/ml, you need <strong>0.5 mL</strong>. [25]"
+            },
+            {
+                q: "A drug has a half-life of <span class='metric-box'>8 hours</span>. Admission level is <span class='metric-box'>4,800 mg/L</span>. How many minutes to fall to <span class='metric-box'>300 mg/L</span>?",
+                a: "<span class='step'>Step 1: Half-lives</span> 4800 -> 2400 (1) -> 1200 (2) -> 600 (3) -> 300 (4).<br><span class='step'>Step 2: Total Time</span> 4 half-lives x 8 hours = 32 hours.<br><span class='step'>Step 3: Convert to minutes</span> 32 x 60 = <strong>1920 minutes</strong>. [26]"
+            },
+            {
+                q: "An <span class='metric-box'>80 kg</span> patient receives a <span class='metric-box'>15 mg/kg</span> loading dose of drug X. How many <span class='metric-box'>grams</span> is this?",
+                a: "<span class='step'>Step 1: Calculate mg</span> 80kg x 15mg = 1200mg.<br><span class='step'>Step 2: Convert to grams</span> 1200 / 1000 = <strong>1.2 g</strong>. [27]"
+            }
+        ];
+
+        let currentDeck = clinicalQuestions;
+        let currentIndex = 0;
+
+        function setDeck(type) {
+            document.getElementById('clinicalToggle').classList.toggle('active', type === 'clinical');
+            document.getElementById('calcToggle').classList.toggle('active', type === 'calculation');
+            currentDeck = type === 'clinical' ? clinicalQuestions : calculationQuestions;
+            currentIndex = 0;
+            showQuestion();
+        }
+
+        function showQuestion() {
+            document.getElementById('question').innerHTML = `${currentIndex + 1}. ${currentDeck[currentIndex].q}`;
+            document.getElementById('answer').style.display = 'none';
+            document.getElementById('answer-text').innerHTML = currentDeck[currentIndex].a;
+        }
+
+        function reveal() {
+            document.getElementById('answer').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentIndex = (currentIndex + 1) % currentDeck.length;
+            showQuestion();
+        }
+
+        // Initialize
+        showQuestion();
+    </script>
+</body>
+</html>
